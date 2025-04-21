@@ -1,0 +1,154 @@
+---
+- name: Create networks
+  hosts: localhost
+  become: true
+  
+  tasks:
+###############################################management-network##################################################    
+    - name: Check if management-network already exists
+      command: virsh net-info management-network
+      register: management_net_info
+      ignore_errors: yes
+
+    - name: creation of management-network
+      copy:
+        dest: /home/anaou/virbr1.xml
+        content: |
+          <network>
+            <name>management-network</name>
+            <bridge name='virbr1' stp='on' delay='0'/>
+            <ip address='192.168.10.1' netmask='255.255.255.0'>
+              <dhcp>
+                <range start='192.168.10.2' end='192.168.10.254'/>
+              </dhcp>
+            </ip>
+          </network>
+      when: management_net_info.rc != 0
+
+    
+    - name: Define management-network with virsh
+      command: virsh net-define /home/anaou/virbr1.xml
+      args:
+        creates: /etc/libvirt/qemu/networks/virbr1.xml
+      when: management_net_info.rc != 0
+
+    - name: Start management-network
+      command: virsh net-start management-network
+      register: start_result
+      failed_when: "'already active' not in start_result.stderr and start_result.rc != 0"
+      when: management_net_info.rc != 0
+
+    - name: Set management-network to autostart
+      command: virsh net-autostart management-network
+      when: management_net_info.rc != 0
+
+###############################################api-network##################################################
+    - name: Check if api-network already exists
+      command: virsh net-info api-network
+      register: api_net_info
+      ignore_errors: yes
+
+    - name: creation of api-network
+      copy:
+        dest: /home/anaou/virbr2.xml
+        content: |
+          <network>
+            <name>api-network</name>
+            <bridge name='virbr2' stp='on' delay='0'/>
+            <ip address='192.168.20.1' netmask='255.255.255.0'>
+              <dhcp>
+                <range start='192.168.20.2' end='192.168.20.254'/>
+              </dhcp>
+            </ip>
+          </network>
+      when: api_net_info.rc != 0
+
+    - name: Define api-network with virsh
+      command: virsh net-define /home/anaou/virbr2.xml
+      args:
+        creates: /etc/libvirt/qemu/networks/virbr2.xml
+      when: api_net_info.rc != 0
+
+    - name: Start api-network
+      command: virsh net-start api-network
+      register: start_result
+      failed_when: "'already active' not in start_result.stderr and start_result.rc != 0"
+      when: api_net_info.rc != 0
+
+    - name: Set api-network to autostart
+      command: virsh net-autostart api-network
+      when: api_net_info.rc != 0
+
+###############################################storage-network##################################################
+    - name: Check if storage-network already exists
+      command: virsh net-info storage-network
+      register: storage_net_info
+      ignore_errors: yes
+
+    - name: creation of storage-network
+      copy:
+        dest: /home/anaou/virbr3.xml
+        content: |
+          <network>
+            <name>storage-network</name>
+            <bridge name='virbr3' stp='on' delay='0'/>
+            <ip address='192.168.30.1' netmask='255.255.255.0'>
+              <dhcp>
+                <range start='192.168.30.2' end='192.168.30.254'/>
+              </dhcp>
+            </ip>
+          </network>
+      when: storage_net_info.rc != 0
+
+    - name: Define storage-network with virsh
+      command: virsh net-define /home/anaou/virbr3.xml
+      args:
+        creates: /etc/libvirt/qemu/networks/virbr3.xml
+      when: storage_net_info.rc != 0
+
+    - name: Start storage-network
+      command: virsh net-start storage-network
+      register: start_result
+      failed_when: "'already active' not in start_result.stderr and start_result.rc != 0"
+      when: storage_net_info.rc != 0
+
+    - name: Set storage-network to autostart
+      command: virsh net-autostart storage-network
+      when: storage_net_info.rc != 0
+
+###############################################tunnel-network##################################################
+    - name: Check if tunnel-network already exists
+      command: virsh net-info tunnel-network
+      register: tunnel_net_info
+      ignore_errors: yes
+
+    - name: creation of tunnel-network
+      copy:
+        dest: /home/anaou/virbr4.xml
+        content: |
+          <network>
+            <name>tunnel-network</name>
+            <bridge name='virbr4' stp='on' delay='0'/>
+            <ip address='192.168.40.1' netmask='255.255.255.0'>
+              <dhcp>
+                <range start='192.168.40.2' end='192.168.40.254'/>
+              </dhcp>
+            </ip>
+          </network>
+      when: tunnel_net_info.rc != 0
+
+    - name: Define tunnel-network with virsh
+      command: virsh net-define /home/anaou/virbr4.xml
+      args:
+        creates: /etc/libvirt/qemu/networks/virbr4.xml
+      when: tunnel_net_info.rc != 0
+
+    - name: Start tunnel-network
+      command: virsh net-start tunnel-network
+      register: start_result
+      failed_when: "'already active' not in start_result.stderr and start_result.rc != 0"
+      when: tunnel_net_info.rc != 0
+
+    - name: Set tunnel-network to autostart
+      command: virsh net-autostart tunnel-network
+      when: tunnel_net_info.rc != 0
