@@ -1,0 +1,68 @@
+#commande pour installer bastion-node
+virt-install \
+  --name bastion-node \
+  --ram 2048 \
+  --vcpus 2 \
+  --disk path=/var/lib/libvirt/images/bastion-node/bastion-node.qcow2,format=qcow2 \
+  --disk path=/var/lib/libvirt/images/bastion-node/seed.iso,device=cdrom \
+  --os-variant ubuntu22.04 \
+  --network network=default,model=virtio \
+  --network network=management-network,model=virtio \
+  --graphics none \
+  --import
+
+#commande pour installer compute-node
+virt-install \
+  --name compute-node \
+  --ram 2048 \
+  --vcpus 2 \
+  --disk path=/var/lib/libvirt/images/compute-node/compute-node.qcow2,format=qcow2 \
+  --disk path=/var/lib/libvirt/images/compute-node/seed.iso,device=cdrom \
+  --os-variant ubuntu22.04 \
+  --network network=management-network,model=virtio \
+  --network network=tunnel-network,model=virtio \
+  --network network=api-network,model=virtio \
+  --network network=storage-network,model=virtio \
+  --graphics none \
+  --import
+
+#commande pour installer controller-node
+virt-install \
+  --name controller-node \
+  --ram 2048 \
+  --vcpus 2 \
+  --disk path=/var/lib/libvirt/images/controller-node/controller-node.qcow2,format=qcow2 \
+  --disk path=/var/lib/libvirt/images/controller-node/seed.iso,device=cdrom \
+  --os-variant ubuntu22.04 \
+  --network network=management-network,model=virtio \
+  --network network=api-network,model=virtio \
+  --graphics none \
+  --import
+
+#commande pour installer network-node
+virt-install \
+  --name network-node \
+  --ram 2048 \
+  --vcpus 2 \
+  --disk path=/var/lib/libvirt/images/network-node/network-node.qcow2,format=qcow2 \
+  --disk path=/var/lib/libvirt/images/network-node/seed.iso,device=cdrom \
+  --os-variant ubuntu22.04 \
+  --network network=management-network,model=virtio \
+  --network network=tunnel-network,model=virtio \
+  --network network=api-network,model=virtio \
+  --graphics none \
+  --import
+
+#commande pour installer storage-node
+virt-install \
+  --name storage-node \
+  --ram 2048 \
+  --vcpus 2 \
+  --disk path=/var/lib/libvirt/images/storage-node/storage-node.qcow2,format=qcow2 \
+  --disk path=/var/lib/libvirt/images/storage-node/seed.iso,device=cdrom \
+  --os-variant ubuntu22.04 \
+  --network network=management-network,model=virtio \
+  --network network=storage-network,model=virtio \
+  --network network=api-network,model=virtio \
+  --graphics none \
+  --import
