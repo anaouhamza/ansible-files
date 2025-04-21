@@ -1,0 +1,19 @@
+---
+- name: Install necessary packages
+  hosts: localhost
+  become: yes
+  tasks:
+    - name: Update APT cache
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - qemu-kvm
+          - libvirt-daemon-system
+          - libvirt-clients
+          - bridge-utils
+          - virtinst
+          - cloud-image-utils
+        state: present
