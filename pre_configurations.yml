@@ -1,0 +1,172 @@
+---
+- name: Create vms
+  hosts: localhost
+  become: true
+  vars:
+    image_url: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+    image_dir: /var/lib/libvirt/images
+    image_file: ubuntu-22.04.qcow2
+    vms:
+      - name: bastion-node
+      - name: network-node
+      - name: compute-node
+      - name: controller-node
+      - name: storage-node
+    ssh_keys_dir: /home/anaou/ansible/ssh_keys
+  
+  tasks:
+    ############################################ ssh-keys ##################################################    
+        - name: Create directory for SSH keys
+          file:
+            path: /home/anaou/ansible/ssh_keys
+            state: directory
+            owner: root
+            group: root
+            mode: '0700'
+
+        - name: Generate SSH key pair for bastion-node
+          openssh_keypair:
+            path: /home/anaou/ansible/ssh_keys/bastion-node-key
+            type: rsa
+            size: 2048
+            owner: root
+            group: root
+            mode: '0600'
+            force: false
+            comment: "bastion-node-key"
+
+        - name: Generate SSH key pair for network-node
+          openssh_keypair:
+            path: /home/anaou/ansible/ssh_keys/network-node-key
+            type: rsa
+            size: 2048
+            owner: root
+            group: root
+            mode: '0600'
+            force: false
+            comment: "network-node-key"
+
+        - name: Generate SSH key pair for controller-node
+          openssh_keypair:
+            path: /home/anaou/ansible/ssh_keys/controller-node-key
+            type: rsa
+            size: 2048
+            owner: root
+            group: root
+            mode: '0600'
+            force: false
+            comment: "controller-node-key"
+
+        - name: Generate SSH key pair for compute-node
+          openssh_keypair:
+            path: /home/anaou/ansible/ssh_keys/compute-node-key
+            type: rsa
+            size: 2048
+            owner: root
+            group: root
+            mode: '0600'
+            force: false
+            comment: "compute-node-key"
+
+        - name: Generate SSH key pair for storage-node
+          openssh_keypair:
+            path: /home/anaou/ansible/ssh_keys/storage-node-key
+            type: rsa
+            size: 2048
+            owner: root
+            group: root
+            mode: '0600'
+            force: false
+            comment: "storage-node-key"
+
+    ############################################ pre-configuration ##################################################
+
+    ############################################ download image ##################################################
+        - name: Ensure image directory exists
+          file:
+            path: "{{ image_dir }}"
+            state: directory
+            mode: '0755'
+
+        - name: Check if the Ubuntu image already exists
+          stat:
+            path: "{{ image_dir }}/{{ image_file }}"
+          register: ubuntu_image
+
+        - name: Download Ubuntu 22.04 cloud image
+          get_url:
+            url: "{{ image_url }}"
+            dest: "{{ image_dir }}/{{ image_file }}"
+            mode: '0644'
+          when: not ubuntu_image.stat.exists
+
+    ############################################ create directories + copy image ##################################################
+        - name: Create directories and copy base image for each VM
+          block:
+            - name: Create VM image directory
+              file:
+                path: "{{ image_dir }}/{{ item.name }}"
+                state: directory
+                mode: '0755'
+              loop: "{{ vms }}"
+
+            - name: Copy base image to VM directory
+              copy:
+                src: "{{ image_dir }}/{{ image_file }}"
+                dest: "{{ image_dir }}/{{ item.name }}/{{ image_file }}"
+                remote_src: yes
+              loop: "{{ vms }}"
+
+            - name: Copy new image to VM directory
+              copy:
+                src: "{{ image_dir }}/{{ image_file }}"
+                dest: "{{ image_dir }}/{{ item.name }}/{{ item.name }}.qcow2"
+                remote_src: yes
+              loop: "{{ vms }}"
+
+
+
+
+    ############################################ create user-data meta-data and generate seend.iso  ##################################################
+
+            - name: Créer le fichier user-data pour chaque VM
+              ansible.builtin.copy:
+                dest: "{{ image_dir }}/{{ item.name }}/user-data"
+                content: |
+                  #cloud-config
+                  hostname: {{ item.name }}
+                  users:
+                    - name: ubuntu
+                      sudo: ALL=(ALL) NOPASSWD:ALL
+                      groups: users, admin
+                      shell: /bin/bash
+                      ssh_authorized_keys:
+                        - "{{ lookup('file', ssh_keys_dir + '/' + item.name + '-key.pub') }}"
+                owner: root
+                group: root
+                mode: '0644'
+              loop: "{{ vms }}"
+              loop_control:
+                label: "{{ item.name }}"
+
+            - name: Créer le fichier meta-data pour chaque VM
+              ansible.builtin.copy:
+                dest: "{{ image_dir }}/{{ item.name }}/meta-data"
+                content: |
+                  instance-id: {{ item.name }}
+                  local-hostname: {{ item.name }}
+                owner: root
+                group: root
+                mode: '0644'
+              loop: "{{ vms }}"
+              loop_control:
+                label: "{{ item.name }}"
+
+            - name: Generate seed.iso for each VM if it doesn't exist
+              ansible.builtin.command:
+                cmd: cloud-localds seed.iso user-data meta-data
+                chdir: "{{ image_dir }}/{{ item.name }}"
+                creates: "{{ image_dir }}/{{ item.name }}/seed.iso"
+              loop: "{{ vms }}"
+              loop_control:
+                label: "{{ item.name }}"
