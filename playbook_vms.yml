@@ -1,0 +1,97 @@
+---
+- name: configurations of bastion-node
+  hosts: bastion
+  tasks:
+    - name: Ajouter une adresse IP à l'interface enp2s0
+      ansible.builtin.command: ip addr add 192.168.10.20/24 dev enp2s0
+      ignore_errors: true  # Ignore si l'IP est déjà assignée
+
+    - name: Activer l'interface enp2s0
+      ansible.builtin.command: ip link set enp2s0 up
+
+    - name: Activer l'IP forwarding
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        state: present
+        sysctl_set: yes
+        reload: yes
+
+    - name: Ajouter la règle NAT MASQUERADE à la table iptables
+      ansible.builtin.shell: |
+        iptables -t nat -C POSTROUTING -o enp1s0 -j MASQUERADE || \
+        iptables -t nat -A POSTROUTING -o enp1s0 -j MASQUERADE
+      args:
+        executable: /bin/bash
+
+
+- name: configurations of compute-node
+  hosts: compute
+  tasks:
+    - name: Ajouter une adresse IP à l'interface enp2s0
+      ansible.builtin.command: ip addr add 192.168.20.30/24 dev enp2s0
+      ignore_errors: true  # Ignore si l'IP est déjà assignée
+
+    - name: Activer l'interface enp2s0
+      ansible.builtin.command: ip link set enp2s0 up
+
+    - name: Ajouter une adresse IP à l'interface enp3s0
+      ansible.builtin.command: ip addr add 192.168.30.30/24 dev enp3s0
+      ignore_errors: true  # Ignore si l'IP est déjà assignée
+
+    - name: Activer l'interface enp3s0
+      ansible.builtin.command: ip link set enp3s0 up
+
+    - name: Ajouter une adresse IP à l'interface enp4s0
+      ansible.builtin.command: ip addr add 192.168.40.30/24 dev enp4s0
+      ignore_errors: true  # Ignore si l'IP est déjà assignée
+
+    - name: Activer l'interface enp4s0
+      ansible.builtin.command: ip link set enp4s0 up
+
+    - name: Ajouter la gateway
+      ansible.builtin.command: ip route add default via 192.168.10.20
+      ignore_errors: true  # Ignore si l'IP est déjà assignée
+
+- name: configurations of controller-node
+  hosts: controller
+  tasks:
+    - name: Ajouter une adresse IP à l'interface enp2s0
+      ansible.builtin.command: ip addr add 192.168.20.40/24 dev enp2s0
+      ignore_errors: true  # Ignore si l'IP est déjà assignée
+
+    - name: Activer l'interface enp2s0
+      ansible.builtin.command: ip link set enp2s0 up
+
+    - name: Ajouter la gateway
+      ansible.builtin.command: ip route add default via 192.168.10.20
+      ignore_errors: true  # Ignore si l'IP est déjà assignée
+
+- name: configurations of network-node
+  hosts: network
+  tasks:
+    - name: Ajouter une adresse IP à l'interface enp2s0
+      ansible.builtin.command: ip addr add 192.168.40.50/24 dev enp2s0
+      ignore_errors: true  # Ignore si l'IP est déjà assignée
+
+    - name: Activer l'interface enp2s0
+      ansible.builtin.command: ip link set enp2s0 up
+
+    - name: Ajouter la gateway
+      ansible.builtin.command: ip route add default via 192.168.10.20
+      ignore_errors: true  # Ignore si l'IP est déjà assignée
+
+- name: configurations of storage-node
+  hosts: storage
+  tasks:
+    - name: Ajouter une adresse IP à l'interface enp2s0
+      ansible.builtin.command: ip addr add 192.168.30.60/24 dev enp2s0
+      ignore_errors: true  # Ignore si l'IP est déjà assignée
+
+    - name: Activer l'interface enp2s0
+      ansible.builtin.command: ip link set enp2s0 up
+
+    - name: Ajouter la gateway
+      ansible.builtin.command: ip route add default via 192.168.10.20
+      ignore_errors: true  # Ignore si l'IP est déjà assignée
+
